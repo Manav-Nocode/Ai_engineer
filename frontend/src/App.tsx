@@ -1,5 +1,13 @@
 import { HomeScreen } from "../pages/HomeScreen";
-
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 export default function App() {
-  return <HomeScreen />;
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/d" element={<HomeScreen />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
 }

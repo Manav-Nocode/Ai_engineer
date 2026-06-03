@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Icon } from "./Icon";
 import { RepoDropdown } from "./RepoDropdown";
 
 export function PromptComposer() {
+  const [dropdown, setDropdown] = useState(false);
+  function openDD() {
+    setDropdown(!dropdown);
+  }
   return (
     <div className="relative w-full max-w-[850px]">
       <section className="min-h-[190px] rounded-[22px] border border-white/[0.03] bg-[#343434] shadow-[0_18px_80px_rgba(0,0,0,0.18)]">
@@ -16,13 +21,22 @@ export function PromptComposer() {
 
         <div className="flex h-16 items-center justify-between px-5 pb-2 text-zinc-400">
           <div className="flex min-w-0 items-center gap-3">
-            <button aria-label="Mention context" className="icon-button" type="button">
+            <button
+              aria-label="Mention context"
+              className="icon-button"
+              type="button"
+            >
               @
             </button>
-            <button aria-label="Attach file" className="icon-button" type="button">
+            <button
+              aria-label="Attach file"
+              className="icon-button"
+              type="button"
+            >
               <Icon name="attach" />
             </button>
             <button
+              onClick={openDD}
               className="flex h-9 items-center gap-2 rounded-lg bg-white/[0.12] px-3 text-sm font-bold text-zinc-300"
               type="button"
             >
@@ -39,7 +53,11 @@ export function PromptComposer() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button aria-label="More options" className="icon-button hidden sm:grid" type="button">
+            <button
+              aria-label="More options"
+              className="icon-button hidden sm:grid"
+              type="button"
+            >
               <Icon name="more" />
             </button>
             <button
@@ -53,7 +71,7 @@ export function PromptComposer() {
         </div>
       </section>
 
-      <RepoDropdown />
+      {dropdown && <RepoDropdown />}
     </div>
   );
 }

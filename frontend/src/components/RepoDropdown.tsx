@@ -1,11 +1,16 @@
 import { Icon } from "./Icon";
 
 export function RepoDropdown() {
+  async function handleClick() {
+    window.location.href = "http://127.0.0.1:8000/api/auth/github";
+  }
   return (
     <div className="absolute left-1/2 top-[calc(100%-10px)] hidden w-[430px] -translate-x-1/2 rounded-[18px] border border-white/[0.09] bg-[#232323] p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.42)] sm:block">
       <div className="flex h-12 items-center gap-3 rounded-xl border border-white/[0.14] bg-[#202020] px-4 text-zinc-300 ring-1 ring-black/20">
         <Icon name="search" className="h-5 w-5 text-zinc-500" />
-        <span className="text-[18px] font-semibold text-zinc-300">Search for a repo</span>
+        <span className="text-[18px] font-semibold text-zinc-300">
+          <input className="" />
+        </span>
       </div>
 
       <button
@@ -20,7 +25,11 @@ export function RepoDropdown() {
 
       <div className="flex items-center justify-between border-t border-white/[0.04] px-2 pt-3 text-sm font-semibold text-zinc-500">
         <span>0/1 repos set up</span>
-        <button className="text-zinc-300 underline underline-offset-2" type="button">
+        <button
+          onClick={handleClick}
+          className="text-zinc-300 underline underline-offset-2 hover:cursor-pointer"
+          type="button"
+        >
           Manage
         </button>
       </div>

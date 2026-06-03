@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -11,21 +13,35 @@ app = FastAPI()
 clientSecret = os.getenv("clientSecret")
 clientId = os.getenv("clientId")
 
-
+origins = [
+    "http://localhost:5173/"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,           # Allowed domains
+    allow_credentials=True,          # Allow cookies and auth headers
+    allow_methods=["*"],             # Allow all HTTP verbs (GET, POST, etc.)
+    allow_headers=["*"],             # Allow all custom request headers
+)
 user_tokens = {} 
 selected_repos = {}
 
+@app.get("/test")
+def test():
+    return "hello there"
+
 @app.get(f"/api/auth/github")
 async def gitAuth():
+    print("request reached here")
     state = os.urandom(16).hex()
     githubUrl = (
         "https://github.com/login/oauth/authorize"
         f"?client_id={clientId}"
-        f"&redirect_uri=http://127.0.0.1:4040"
+        f"&redirect_uri=http://127.0.0.1:8000/api/auth/github/callback"
         f"&scope=repo user"
         f"&state={state}"
     )
-    print(githubUrl)
+    # print(githubUrl)
     return RedirectResponse(url=githubUrl)
 
 @app.get("/api/auth/github/callback")
@@ -65,7 +81,8 @@ async def github_callback(code: str, state:str = None):
         "username": username,
         "connected_at": datetime.now().isoformat()
     }
-             return RedirectResponse(url=f"http://localhost:3000/dashboard?github_connected=true&user_id={user_id}")
+             print("succesfull")
+             return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={user_id}")
 
 
 
