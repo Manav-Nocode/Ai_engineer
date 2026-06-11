@@ -14,7 +14,8 @@ clientSecret = os.getenv("clientSecret")
 clientId = os.getenv("clientId")
 
 origins = [
-    "http://localhost:5173/"
+    "http://localhost:5173",
+    "http://127.0.0.1:8000"
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -32,7 +33,7 @@ def test():
 
 @app.get(f"/api/auth/github")
 async def gitAuth():
-    print("request reached here")
+
     state = os.urandom(16).hex()
     githubUrl = (
         "https://github.com/login/oauth/authorize"
@@ -42,12 +43,13 @@ async def gitAuth():
         f"&state={state}"
     )
     # print(githubUrl)
-    return RedirectResponse(url=githubUrl)
+    return RedirectResponse(url=githubUrl)  
 
 @app.get("/api/auth/github/callback")
 async def github_callback(code: str, state:str = None):
+    print("control reached here")
     async with httpx.AsyncClient() as client:
-        response = await client.post(
+        response = await client.post(   
                         "https://github.com/login/oauth/access_token",
                         headers={"Accept": "application/json"},
                         data={
@@ -58,7 +60,7 @@ async def github_callback(code: str, state:str = None):
 
         )
         token_data = response.json()
-
+        print(token_data)
         if "error" in token_data:
             raise HTTPException(status_code=400,
                                 detail=token_data["error_description"])
@@ -81,13 +83,15 @@ async def github_callback(code: str, state:str = None):
         "username": username,
         "connected_at": datetime.now().isoformat()
     }
-             print("succesfull")
+
+            #  print(user_tokens)
              return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={user_id}")
 
 
-
-    @app.get("/api/repos")
-    async def list_repositories(user_id: int):
+@app.get("/api/repos")
+async def list_repositories(user_id: int):
+        print(user_id)
+        print(user_tokens)
         if user_id not in user_tokens:
             raise HTTPException(status_code=400, detail="github not connected")
         access_token = user_tokens[user_id]["access_token"]
@@ -109,7 +113,7 @@ async def github_callback(code: str, state:str = None):
                 raise HTTPException(status_code=response.status_code, detail="Failed to fetch repos")
             repos = response.json()
     
-    formatted_repos = [
+        formatted_repos = [
         {
             "id": repo["id"],
             "name": repo["name"],
@@ -126,7 +130,10 @@ async def github_callback(code: str, state:str = None):
         for repo in repos
     ]
 
-    return {"respositories" : formatted_repos}
+        return {
+            "success" : "ok",
+            "respositories" : formatted_repos
+            }
   
 
 @app.post("/api/repos/select")
@@ -134,7 +141,7 @@ async def select_repository(user_id:int, repo_full_name: str):
     if user_id not in user_tokens:
         raise HTTPException(status_code=400, detail="github not found")
     
-    select_repository[user_id] = {
+    selected_repos[user_id] = {
         "repo_full_name" : repo_full_name,
         "selected_at" : datetime.now().isoformat()
     }
