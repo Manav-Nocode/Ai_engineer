@@ -62,7 +62,7 @@ export function PromptComposer() {
             </button>
             <button
               aria-label="Send prompt"
-              className="grid h-10 w-10 place-items-center rounded-full bg-zinc-200 text-zinc-950 shadow-sm transition hover:bg-white"
+              className="grid h-10 w-10 place-items-center rounded-full bg-[#8C35F8] text-zinc-950 shadow-sm transition hover:bg-white"
               type="button"
             >
               <Icon name="send" className="h-5 w-5" />
