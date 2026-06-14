@@ -42,12 +42,12 @@ async def gitAuth():
         f"&scope=repo user"
         f"&state={state}"
     )
-    # print(githubUrl)
+
     return RedirectResponse(url=githubUrl)  
 
 @app.get("/api/auth/github/callback")
 async def github_callback(code: str, state:str = None):
-    print("control reached here")
+
     async with httpx.AsyncClient() as client:
         response = await client.post(   
                         "https://github.com/login/oauth/access_token",
@@ -84,13 +84,13 @@ async def github_callback(code: str, state:str = None):
         "connected_at": datetime.now().isoformat()
     }
 
-            #  print(user_tokens)
+             print(user_tokens)
              return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={user_id}")
 
 
 @app.get("/api/repos")
 async def list_repositories(user_id: int):
-        print(user_id)
+
         print(user_tokens)
         if user_id not in user_tokens:
             raise HTTPException(status_code=400, detail="github not connected")

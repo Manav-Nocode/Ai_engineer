@@ -2,71 +2,17 @@ import { useState } from "react";
 import { Icon } from "./Icon";
 import { useSearchParams } from "react-router-dom";
 
-interface repoItem {
-  clone_url: string;
-  default_branch: string;
-  description: null;
-  full_name: string;
-  id: number;
-  language: string;
-  name: string;
-  private: boolean;
-  stars: number;
-  updated_at: string;
-  url: string;
-}
-interface ApiResponse {
-  repo: string;
+interface Props {
+  fun: () => Promise<void>;
 }
 
-export function RepoDropdown() {
+export function RepoDropdown({ fun }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [choosenRepo, setChooseRepo] = useState<string[]>([]);
   const [popup, setPopup] = useState(false);
-  const [repoData, setRepoData] = useState<repoItem[]>([]);
   async function handleClick() {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
-
-  async function importRepo() {
-    try {
-      const userId = searchParams.get("user_id");
-      // const userId = localStorage.getItem("userId");
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/repos?user_id=${userId}`,
-      );
-
-      const data = await response.json();
-      // console.log(data.respositories);
-      if (data.success && Array.isArray(data?.respositories)) {
-        setRepoData(data.respositories);
-        setPopup(true);
-      } else {
-        //Handle the error gracefully without crashing the UI
-        console.error("API did not return an array. Received:", data);
-      }
-    } catch (err) {
-      console.log("errrors");
-    }
-  }
-
-  async function getname(name: string) {
-    const userId = searchParams.get("user_id");
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/repos/select?user_id=${userId}&repo_full_name=${name}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    const data: ApiResponse = await response.json();
-    // console.log(data);
-    const repoName = data.repo;
-    setChooseRepo((prev) => [repoName, ...prev]);
-  }
-  console.log(choosenRepo);
 
   return (
     <div className="relative">
@@ -79,7 +25,7 @@ export function RepoDropdown() {
         </div>
 
         <button
-          onClick={importRepo}
+          onClick={fun}
           className="mt-3 flex w-full items-center justify-between rounded-lg px-2 py-3 text-sm font-bold text-zinc-200 transition hover:bg-white/[0.05]"
           type="button"
         >
@@ -118,32 +64,6 @@ export function RepoDropdown() {
                 className="text-zinc-400 hover:text-white transition"
               >
                 ✕
-              </button>
-            </div>
-            {/* Future Props Display Area */}
-            <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-3 text-xs bg-[#161616] p-3 rounded-lg border border-white/[0.05] font-mono custom-scrollbar">
-              {" "}
-              <p className="text-zinc-500">// Future props will go here</p>
-              <div>
-                <span className="text-amber-400">User's Repositories:</span>
-
-                {repoData?.map((item, index) => (
-                  <li
-                    onClick={() => getname(item.name)}
-                    key={index}
-                    className="w-full h-6 mt-2 border-1 border-amber-400 list-none hover:cursor-pointer"
-                  >
-                    {item.name}
-                  </li>
-                ))}
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end">
-              <button
-                onClick={() => setPopup(false)}
-                className="rounded-md bg-zinc-800 px-4 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-700 transition"
-              >
-                Close
               </button>
             </div>
           </div>
