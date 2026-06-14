@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Icon } from "./Icon";
 import { RepoDropdown } from "./RepoDropdown";
 
-export function PromptComposer() {
+interface Props {
+  fun: () => Promise<void>;
+}
+export function PromptComposer({ fun }: Props) {
   const [dropdown, setDropdown] = useState(false);
   function openDD() {
     setDropdown(!dropdown);
@@ -71,7 +74,7 @@ export function PromptComposer() {
         </div>
       </section>
 
-      {dropdown && <RepoDropdown />}
+      {dropdown && <RepoDropdown fun={fun} />}
     </div>
   );
 }
