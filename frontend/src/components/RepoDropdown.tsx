@@ -1,19 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 import { useSearchParams } from "react-router-dom";
 
 interface Props {
   fun: () => Promise<void>;
+  selectedRepo: string | undefined;
 }
 
-export function RepoDropdown({ fun }: Props) {
+export function RepoDropdown({ fun, selectedRepo }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [choosenRepo, setChooseRepo] = useState<string[]>([]);
+  const [workingRepos, setWorkingRepos] = useState([]);
   const [popup, setPopup] = useState(false);
   async function handleClick() {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
+  // useEffect(() => {
+  async function fetchAllDetails() {
+    const github_user_id = searchParams.get("user_id");
 
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/repos/contents?user_id=${github_user_id}`,
+    );
+    const data = await response.json();
+    console.log(data);
+  }
+  // fetchAllDetails();
+  // }, []);
   return (
     <div className="relative">
       <div className="absolute left-1/2 top-[calc(100%-10px)] hidden w-[430px] -translate-x-1/2 rounded-[18px] border border-white/[0.09] bg-[#232323] p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.42)] sm:block">
@@ -34,14 +46,14 @@ export function RepoDropdown({ fun }: Props) {
           </span>
           <Icon name="arrow" className="h-4 w-4 text-zinc-400" />
         </button>
-        {choosenRepo?.map((item, index) => (
-          <li
-            key={index}
-            className="border-2 text-white border-green-400 m-2 pl-4"
-          >
-            {item}
-          </li>
-        ))}
+
+        <li
+          onClick={fetchAllDetails}
+          className="border-2 text-white border-green-400 m-2 pl-4"
+        >
+          {selectedRepo && selectedRepo}
+        </li>
+
         <div className="flex items-center justify-between border-t border-white/[0.04] px-2 pt-3 text-sm font-semibold text-zinc-500">
           <span>0/1 repos set up</span>
           <button

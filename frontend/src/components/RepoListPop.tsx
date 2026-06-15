@@ -15,13 +15,9 @@ export interface repoItem {
 interface RepoListPopProps {
   data: repoItem[];
   onClose?: () => void;
-  setSelected: (string: string) => void;
+  fun: (name: string) => void;
 }
-const RepoListPop = ({ data, setSelected }: RepoListPopProps) => {
-  function handleClick(text: string) {
-    setSelected(text);
-    console.log("clicked");
-  }
+const RepoListPop = ({ data, fun }: RepoListPopProps) => {
   return (
     <>
       <div className="mt-4 flex-1 overflow-y-auto pr-1 space-y-3 text-xs bg-[#161616] p-3 rounded-lg border border-white/[0.05] font-mono custom-scrollbar">
@@ -31,7 +27,7 @@ const RepoListPop = ({ data, setSelected }: RepoListPopProps) => {
         </div>
         {data.map((items, idx) => (
           <li
-            onClick={() => handleClick(items.full_name)}
+            onClick={() => fun(items.full_name)}
             className="list-none cursor-pointer hover:text-amber-400"
             key={idx}
           >

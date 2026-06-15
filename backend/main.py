@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from database.db_init import db
 
-import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import httpx
@@ -75,26 +75,49 @@ async def github_callback(code: str, state:str = None):
             }
         )
              user_data = user_response.json()
-             user_id = user_data["id"]
+             github_user_id = user_data["id"]
              username = user_data["login"]
 
-             user_tokens[user_id] = {
-        "access_token": access_token,
-        "username": username,
-        "connected_at": datetime.now().isoformat()
-    }
+        User_Coll = db["users"]
+        user_already_exists = User_Coll.find_one({"github_user_id": github_user_id})
 
-             print(user_tokens)
-             return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={user_id}")
+        User_info = {
+            "username": username,
+            "github_user_id": github_user_id,
+            "access_token": access_token,
+            "last_login": datetime.utcnow().isoformat()
+        }
+
+        if not user_already_exists:
+            User_info["created_at"] = datetime.utcnow().isoformat(),
+            User_Coll.insert_one(User_info)
+            print("created a new db")
+        else:
+            User_Coll.update_one(
+                {"github_user_id": github_user_id},
+                {"$set": {
+                    "access_token": access_token,
+                    "last_login": datetime.utcnow().isoformat()
+                }}
+            )
+            print("updated")
+
+                      
+        
+        return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={github_user_id}")
 
 
 @app.get("/api/repos")
 async def list_repositories(user_id: int):
 
-        print(user_tokens)
-        if user_id not in user_tokens:
+        # print(user_tokens)
+        User_Coll = db["users"]
+
+        Check_User = User_Coll.find_one({"github_user_id": user_id})
+        print(f"found", Check_User)
+        if not Check_User:
             raise HTTPException(status_code=400, detail="github not connected")
-        access_token = user_tokens[user_id]["access_token"]
+        access_token = Check_User.get("access_token")
         async with httpx.AsyncClient() as client:
             response = await client.get(
                  "https://api.github.com/user/repos",
@@ -154,7 +177,7 @@ async def select_repository(user_id:int, repo_full_name: str):
 @app.get("/api/repos/contents")
 async def get_repo_contents(user_id: int, path: str = ""):
     """Read files and folders from selected repo"""
-    
+    print("controls here")
     if user_id not in user_tokens or user_id not in selected_repos:
         raise HTTPException(status_code=400, detail="GitHub not connected or no repo selected")
     

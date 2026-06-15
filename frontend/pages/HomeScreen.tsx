@@ -12,28 +12,42 @@ export function HomeScreen() {
   const [selectedRepo, setSelectedRepo] = useState("");
 
   async function importUserRepos() {
-    const userId = searchParams.get("user_id");
+    const github_user_id = searchParams.get("user_id");
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/repos?user_id=${userId}`,
+        `http://127.0.0.1:8000/api/repos?user_id=${github_user_id}`,
       );
 
       const data = await response.json();
       if (data.success && Array.isArray(data.respositories)) {
         setRepoData(data.respositories);
         setPopup(true);
-        console.log(selectedRepo);
       } else {
-        //Handle the error gracefully without crashing the UI
         console.error("API did not return an array. Received:", data);
       }
     } catch (err) {
       console.log(err);
     }
   }
-  console.log(selectedRepo);
+  async function selectRepo(name: string) {
+    const userId = searchParams.get("user_id");
 
+    try {
+      const resp = await fetch(
+        `http://127.0.0.1:8000/api/repos/select?user_id=${userId}&repo_full_name=${name}`,
+        {
+          method: "POST",
+        },
+      );
+
+      const data = await resp.json();
+
+      setSelectedRepo(data.repo);
+    } catch (err) {
+      console.log(err);
+    }
+  }
   return (
     <main className="min-h-screen overflow-hidden bg-[#252525] text-zinc-100">
       <div className="flex min-h-screen">
@@ -48,7 +62,10 @@ export function HomeScreen() {
                 What do you want to get done?
               </h1>
 
-              <PromptComposer fun={importUserRepos} />
+              <PromptComposer
+                fun={importUserRepos}
+                selectedRepo={selectedRepo !== "" ? selectedRepo : undefined}
+              />
             </div>
           </div>
         </section>
@@ -80,7 +97,7 @@ export function HomeScreen() {
             </button>
 
             {/* Render Repo List component */}
-            <RepoListPop data={repoData} setSelected={setSelectedRepo} />
+            <RepoListPop data={repoData} fun={selectRepo} />
           </div>
         </div>
       )}
