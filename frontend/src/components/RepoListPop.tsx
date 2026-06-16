@@ -1,4 +1,3 @@
-import React from "react";
 export interface repoItem {
   clone_url: string;
   default_branch: string;
@@ -15,7 +14,7 @@ export interface repoItem {
 interface RepoListPopProps {
   data: repoItem[];
   onClose?: () => void;
-  fun: (name: string) => void;
+  fun: (repoDetails: repoItem) => void;
 }
 const RepoListPop = ({ data, fun }: RepoListPopProps) => {
   return (
@@ -27,7 +26,7 @@ const RepoListPop = ({ data, fun }: RepoListPopProps) => {
         </div>
         {data.map((items, idx) => (
           <li
-            onClick={() => fun(items.full_name)}
+            onClick={() => fun(items)}
             className="list-none cursor-pointer hover:text-amber-400"
             key={idx}
           >

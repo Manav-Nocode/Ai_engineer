@@ -6,10 +6,9 @@ def get_database():
 
     CONNECTION_STRING = os.getenv("MONGO_URL")
 
-
     client = MongoClient(CONNECTION_STRING)
 
-    return client['user_shopping_list']
+    return client['ai_swe']
 
 
   

@@ -15,16 +15,16 @@ export function RepoDropdown({ fun, selectedRepo }: Props) {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
   // useEffect(() => {
-  async function fetchAllDetails() {
-    const github_user_id = searchParams.get("user_id");
+  async function fetchCurrentRepoDetails() {
+    const userId = searchParams.get("user_id");
 
     const response = await fetch(
-      `http://127.0.0.1:8000/api/repos/contents?user_id=${github_user_id}`,
+      `http://127.0.0.1:8000/api/repos/contents?user_id=${userId}&repo=${selectedRepo}`,
     );
     const data = await response.json();
     console.log(data);
   }
-  // fetchAllDetails();
+  // fetchCurrentRepoDetails();
   // }, []);
   return (
     <div className="relative">
@@ -48,7 +48,7 @@ export function RepoDropdown({ fun, selectedRepo }: Props) {
         </button>
 
         <li
-          onClick={fetchAllDetails}
+          onClick={fetchCurrentRepoDetails}
           className="border-2 text-white border-green-400 m-2 pl-4"
         >
           {selectedRepo && selectedRepo}

@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database.db_init import db
-
+from fastapi import Body
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import httpx
@@ -24,12 +24,6 @@ app.add_middleware(
     allow_methods=["*"],             # Allow all HTTP verbs (GET, POST, etc.)
     allow_headers=["*"],             # Allow all custom request headers
 )
-user_tokens = {} 
-selected_repos = {}
-
-@app.get("/test")
-def test():
-    return "hello there"
 
 @app.get(f"/api/auth/github")
 async def gitAuth():
@@ -60,7 +54,6 @@ async def github_callback(code: str, state:str = None):
 
         )
         token_data = response.json()
-        print(token_data)
         if "error" in token_data:
             raise HTTPException(status_code=400,
                                 detail=token_data["error_description"])
@@ -91,7 +84,7 @@ async def github_callback(code: str, state:str = None):
         if not user_already_exists:
             User_info["created_at"] = datetime.utcnow().isoformat(),
             User_Coll.insert_one(User_info)
-            print("created a new db")
+
         else:
             User_Coll.update_one(
                 {"github_user_id": github_user_id},
@@ -99,10 +92,7 @@ async def github_callback(code: str, state:str = None):
                     "access_token": access_token,
                     "last_login": datetime.utcnow().isoformat()
                 }}
-            )
-            print("updated")
-
-                      
+            )                      
         
         return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={github_user_id}")
 
@@ -110,11 +100,10 @@ async def github_callback(code: str, state:str = None):
 @app.get("/api/repos")
 async def list_repositories(user_id: int):
 
-        # print(user_tokens)
         User_Coll = db["users"]
 
         Check_User = User_Coll.find_one({"github_user_id": user_id})
-        print(f"found", Check_User)
+
         if not Check_User:
             raise HTTPException(status_code=400, detail="github not connected")
         access_token = Check_User.get("access_token")
@@ -160,33 +149,61 @@ async def list_repositories(user_id: int):
   
 
 @app.post("/api/repos/select")
-async def select_repository(user_id:int, repo_full_name: str):
-    if user_id not in user_tokens:
+async def select_repository(user_id:int, repo: dict = Body(...)):
+    User_Coll = db["users"]
+    check_user = User_Coll.find_one({"github_user_id": user_id})
+
+    if  not check_user:
         raise HTTPException(status_code=400, detail="github not found")
     
-    selected_repos[user_id] = {
-        "repo_full_name" : repo_full_name,
-        "selected_at" : datetime.now().isoformat()
-    }
+    Repo_Coll = db["Connected_repos"]
+    existing_repo = Repo_Coll.find_one(
+        {
+            "github_user_id": user_id,
+            "repo_id": repo["id"]
+        }
+    )
+    if existing_repo:
+        Repo_Coll.update_one(
+            {"$set": {
+                "last_opened": datetime.utcnow()
+            }}
+        )
+        return {
+            "message": "Repo already imported",
+            "repo":repo["full_name"]
+        }
+    Repo_Coll.insert_one({
+             "github_user_id": user_id,
+            "repo_id": repo["id"],
+            "repo_name": repo["name"],
+            "repo_full_name": repo["full_name"],
+            "default_branch": repo["default_branch"],
+            "imported_at":datetime.utcnow(),
+            "last_opened": datetime.utcnow()
 
+         }
+    )
     return {
-        "message": f"Respository {repo_full_name} selected",
-        "repo" :  repo_full_name
+        "message": "Respository imported",
+        "repo" :  repo["full_name"]
     }
 
 @app.get("/api/repos/contents")
-async def get_repo_contents(user_id: int, path: str = ""):
+async def get_repo_contents(user_id: int,repo:str, path: str = ""):
     """Read files and folders from selected repo"""
-    print("controls here")
-    if user_id not in user_tokens or user_id not in selected_repos:
+
+    User_Coll = db["users"]
+    check_user = User_Coll.find_one({"github_user_id": user_id})
+
+    if  not check_user : #add a check if the repo is selected or not
         raise HTTPException(status_code=400, detail="GitHub not connected or no repo selected")
     
-    access_token = user_tokens[user_id]["access_token"]
-    repo = selected_repos[user_id]["repo_full_name"]
+    access_token = check_user["access_token"]
     
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            f"https://api.github.com/repos/{repo}/contents/{path}",
+            f"https://api.github.com/repos/{repo}/contents",
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Accept": "application/vnd.github.v3+json"
@@ -197,30 +214,38 @@ async def get_repo_contents(user_id: int, path: str = ""):
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch contents")
     
     contents = response.json()
-    
+    print(contents)
     # Single file vs directory
     if isinstance(contents, dict):  # Single file
         return {
-            "type": "file",
+             "type": "file",
             "name": contents["name"],
             "path": contents["path"],
-            "content": contents.get("content"),  # Base64 encoded
+            "content": contents.get("content"),      # Base64 encoded
+            "encoding": contents.get("encoding"),    # "base64"
             "sha": contents["sha"],
-            "download_url": contents["download_url"]
+            "size": contents.get("size"),
+            "html_url": contents.get("html_url"),
+            "url":contents.get("url"),
+            "download_url": contents.get("download_url")
         }
     
     # Directory listing
     return {
         "type": "directory",
-        "path": path,
+        "path": path or "",
         "items": [
             {
-                "name": item["name"],
-                "type": item["type"],  # "file" or "dir"
-                "path": item["path"],
-                "size": item.get("size"),
-                "sha": item["sha"]
-            }
+            "name": item["name"],
+            "type": item["type"],
+            "path": item["path"],
+            "size": item.get("size"),
+            "sha": item["sha"],
+            "html_url": item.get("html_url"),        # ✅ Add this
+            "download_url": item.get("download_url"),        # API URL for this item
+            "url": item.get("url")
+                
+            }   
             for item in contents
         ]
     }

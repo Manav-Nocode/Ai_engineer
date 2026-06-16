@@ -12,15 +12,18 @@ export function HomeScreen() {
   const [selectedRepo, setSelectedRepo] = useState("");
 
   async function importUserRepos() {
-    const github_user_id = searchParams.get("user_id");
+    const user_id =
+      searchParams.get("user_id") || localStorage.getItem("userId");
+    console.log(user_id);
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/repos?user_id=${github_user_id}`,
+        `http://127.0.0.1:8000/api/repos?user_id=${user_id}`,
       );
 
       const data = await response.json();
       if (data.success && Array.isArray(data.respositories)) {
+        console.log(data);
         setRepoData(data.respositories);
         setPopup(true);
       } else {
@@ -30,19 +33,23 @@ export function HomeScreen() {
       console.log(err);
     }
   }
-  async function selectRepo(name: string) {
-    const userId = searchParams.get("user_id");
+  async function selectRepo(repoDetails: repoItem) {
+    console.log(repoDetails);
+    const userId =
+      searchParams.get("user_id") || localStorage.getItem("userId");
 
     try {
       const resp = await fetch(
-        `http://127.0.0.1:8000/api/repos/select?user_id=${userId}&repo_full_name=${name}`,
+        `http://127.0.0.1:8000/api/repos/select?user_id=${userId}`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(repoDetails),
         },
       );
 
       const data = await resp.json();
-
+      console.log(data);
       setSelectedRepo(data.repo);
     } catch (err) {
       console.log(err);
