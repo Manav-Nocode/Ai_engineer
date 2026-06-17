@@ -2,19 +2,26 @@ import { useSearchParams } from "react-router-dom";
 import { AppHeader } from "../src/components/AppHeader";
 import { PromptComposer } from "../src/components/PromptComposer";
 import { Sidebar } from "../src/components/Sidebar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RepoListPop, { type repoItem } from "../src/components/RepoListPop";
 
 export function HomeScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [repoData, setRepoData] = useState<repoItem[]>([]);
   const [popup, setPopup] = useState(false);
-  const [selectedRepo, setSelectedRepo] = useState("");
+
+  let rawId: string | null;
 
   async function importUserRepos() {
-    const user_id =
-      searchParams.get("user_id") || localStorage.getItem("userId");
-    console.log(user_id);
+    rawId = localStorage.getItem("userId");
+    const localStorageId = rawId ? JSON.parse(rawId) : null;
+    const user_id = searchParams.get("user_id") || localStorageId;
+
+    if (!user_id) {
+      // no user id available anywhere — redirect to login/connect flow, etc.
+      console.error("No user_id found in searchParams or localStorage");
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -35,8 +42,9 @@ export function HomeScreen() {
   }
   async function selectRepo(repoDetails: repoItem) {
     console.log(repoDetails);
-    const userId =
-      searchParams.get("user_id") || localStorage.getItem("userId");
+    rawId = localStorage.getItem("userId");
+    const localStorageId = rawId ? JSON.parse(rawId) : null;
+    const userId = searchParams.get("user_id") || localStorageId;
 
     try {
       const resp = await fetch(
@@ -50,7 +58,6 @@ export function HomeScreen() {
 
       const data = await resp.json();
       console.log(data);
-      setSelectedRepo(data.repo);
     } catch (err) {
       console.log(err);
     }
@@ -69,10 +76,7 @@ export function HomeScreen() {
                 What do you want to get done?
               </h1>
 
-              <PromptComposer
-                fun={importUserRepos}
-                selectedRepo={selectedRepo !== "" ? selectedRepo : undefined}
-              />
+              <PromptComposer fun={importUserRepos} />
             </div>
           </div>
         </section>

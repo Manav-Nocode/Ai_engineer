@@ -4,28 +4,75 @@ import { useSearchParams } from "react-router-dom";
 
 interface Props {
   fun: () => Promise<void>;
-  selectedRepo: string | undefined;
 }
-
-export function RepoDropdown({ fun, selectedRepo }: Props) {
+interface workingReposType {
+  repo_name: string;
+  repo_full_name: string;
+}
+export function RepoDropdown({ fun }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [workingRepos, setWorkingRepos] = useState([]);
+  const [workingRepos, setWorkingRepos] = useState<workingReposType[]>([]);
   const [popup, setPopup] = useState(false);
+  let rawId: string | null;
+  const [choosenRepo, setChoosenRepo] = useState("");
   async function handleClick() {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
-  // useEffect(() => {
-  async function fetchCurrentRepoDetails() {
-    const userId = searchParams.get("user_id");
+  useEffect(() => {
+    async function fetchCurrentRepoDetails() {
+      rawId = localStorage.getItem("userId");
+      const localStorageId = rawId ? JSON.parse(rawId) : null;
+      const user_id = searchParams.get("user_id") || localStorageId;
 
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/repos/contents?user_id=${userId}&repo=${selectedRepo}`,
-    );
-    const data = await response.json();
-    console.log(data);
+      if (!user_id) {
+        // no user id available anywhere — redirect to login/connect flow, etc.
+        console.error("No user_id found in searchParams or localStorage");
+        return;
+      }
+      // show all the repos in dropdown as persisted data
+      try {
+        const renderRepoDataRequest = await fetch(
+          `http://127.0.0.1:8000/api/userRepos?user_id=${user_id}`,
+        );
+        const repoResponse = await renderRepoDataRequest.json();
+        if (repoResponse && Array.isArray(repoResponse.repos)) {
+          setWorkingRepos(repoResponse.repos);
+          // console.log(repoResponse);
+          // console.log(workingRepos);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    fetchCurrentRepoDetails();
+  }, []);
+  useEffect(() => {
+    console.log(workingRepos);
+  }, [workingRepos]);
+
+  async function fast(name: string) {
+    rawId = localStorage.getItem("userId");
+    const localStorageId = rawId ? JSON.parse(rawId) : null;
+    const user_id = searchParams.get("user_id") || localStorageId;
+
+    if (!user_id) {
+      // no user id available anywhere — redirect to login/connect flow, etc.
+      console.error("No user_id found in searchParams or localStorage");
+      return;
+    }
+    setChoosenRepo(name);
+    console.log(choosenRepo);
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/repos/contents?user_id=${user_id}&repo=${name}`,
+      );
+      const data = await response.json();
+      console.log(data);
+    } catch (err) {
+      console.log(err);
+    }
   }
-  // fetchCurrentRepoDetails();
-  // }, []);
+
   return (
     <div className="relative">
       <div className="absolute left-1/2 top-[calc(100%-10px)] hidden w-[430px] -translate-x-1/2 rounded-[18px] border border-white/[0.09] bg-[#232323] p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.42)] sm:block">
@@ -47,13 +94,39 @@ export function RepoDropdown({ fun, selectedRepo }: Props) {
           <Icon name="arrow" className="h-4 w-4 text-zinc-400" />
         </button>
 
-        <li
+        {/* <li
           onClick={fetchCurrentRepoDetails}
           className="border-2 text-white border-green-400 m-2 pl-4"
-        >
-          {selectedRepo && selectedRepo}
-        </li>
+        > */}
+        {/* {workingRepos.length > 0 ? (
+          <li
+            // onClick={fetchCurrentRepoDetails}
+            className="border-2 text-white border-green-400 m-2 pl-4"
+          >
+            {workingRepos.map((items, idx) => (
+              <div key={idx}>{items.repo_name}</div>
+            ))}
+          </li>
+        ) : (
+          "Nothing to show"
+        )} */}
+        {/* </li> */}
 
+        {workingRepos.length > 0 ? (
+          <ul className="mt-2 max-h-[220px] space-y-1 overflow-y-auto">
+            {workingRepos.map((repo) => (
+              <li
+                onClick={() => fast(repo.repo_full_name)}
+                key={repo.repo_full_name}
+                className="rounded-lg px-2 py-2 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.05]"
+              >
+                {repo.repo_name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-2 py-3 text-sm text-zinc-500">Nothing to show</p>
+        )}
         <div className="flex items-center justify-between border-t border-white/[0.04] px-2 pt-3 text-sm font-semibold text-zinc-500">
           <span>0/1 repos set up</span>
           <button

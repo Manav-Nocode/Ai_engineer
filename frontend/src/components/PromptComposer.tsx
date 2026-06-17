@@ -4,9 +4,8 @@ import { RepoDropdown } from "./RepoDropdown";
 
 interface Props {
   fun: () => Promise<void>;
-  selectedRepo: string | undefined;
 }
-export function PromptComposer({ fun, selectedRepo }: Props) {
+export function PromptComposer({ fun }: Props) {
   const [dropdown, setDropdown] = useState(false);
   function openDD() {
     setDropdown(!dropdown);
@@ -75,7 +74,7 @@ export function PromptComposer({ fun, selectedRepo }: Props) {
         </div>
       </section>
 
-      {dropdown && <RepoDropdown fun={fun} selectedRepo={selectedRepo} />}
+      {dropdown && <RepoDropdown fun={fun} />}
     </div>
   );
 }

@@ -188,11 +188,31 @@ async def select_repository(user_id:int, repo: dict = Body(...)):
         "message": "Respository imported",
         "repo" :  repo["full_name"]
     }
+@app.get("/api/userRepos")
+async def get_allUser_repos(user_id: int):
+    User_Coll = db["users"]
+    check_user = User_Coll.find_one({"github_user_id": user_id})
+    if not check_user:
+        raise HTTPException(status_code=400, detail="Github not connected")
+    
+    Repo_Coll = db["Connected_repos"]
+    existing_repos = Repo_Coll.find({
+        "github_user_id": user_id
+    })
+    repos = [
+        {
+            "repo_name": repo["repo_name"],
+            "repo_full_name": repo["repo_full_name"]
+        }
+        for repo in existing_repos
+    ]
+    return {
+        "repos": repos
+    }
 
 @app.get("/api/repos/contents")
 async def get_repo_contents(user_id: int,repo:str, path: str = ""):
     """Read files and folders from selected repo"""
-
     User_Coll = db["users"]
     check_user = User_Coll.find_one({"github_user_id": user_id})
 
@@ -214,7 +234,7 @@ async def get_repo_contents(user_id: int,repo:str, path: str = ""):
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch contents")
     
     contents = response.json()
-    print(contents)
+    # print(contents)
     # Single file vs directory
     if isinstance(contents, dict):  # Single file
         return {
@@ -243,8 +263,9 @@ async def get_repo_contents(user_id: int,repo:str, path: str = ""):
             "sha": item["sha"],
             "html_url": item.get("html_url"),        # ✅ Add this
             "download_url": item.get("download_url"),        # API URL for this item
-            "url": item.get("url")
-                
+            "url": item.get("url"),
+            "content": item.get("content"),
+            "encoding": item.get("encoding")
             }   
             for item in contents
         ]
