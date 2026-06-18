@@ -1,31 +1,26 @@
-import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AppHeader } from "../src/components/AppHeader";
 import { PromptComposer } from "../src/components/PromptComposer";
 import { Sidebar } from "../src/components/Sidebar";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import RepoListPop, { type repoItem } from "../src/components/RepoListPop";
+import { useApp } from "../contexts/repoContext";
 
 export function HomeScreen() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [repoData, setRepoData] = useState<repoItem[]>([]);
   const [popup, setPopup] = useState(false);
-
-  let rawId: string | null;
+  const { userId } = useApp();
 
   async function importUserRepos() {
-    rawId = localStorage.getItem("userId");
-    const localStorageId = rawId ? JSON.parse(rawId) : null;
-    const user_id = searchParams.get("user_id") || localStorageId;
-
-    if (!user_id) {
+    if (!userId) {
       // no user id available anywhere — redirect to login/connect flow, etc.
       console.error("No user_id found in searchParams or localStorage");
       return;
     }
-
+    console.log(userId);
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/repos?user_id=${user_id}`,
+        `http://127.0.0.1:8000/api/repos?user_id=${userId}`,
       );
 
       const data = await response.json();
@@ -42,10 +37,6 @@ export function HomeScreen() {
   }
   async function selectRepo(repoDetails: repoItem) {
     console.log(repoDetails);
-    rawId = localStorage.getItem("userId");
-    const localStorageId = rawId ? JSON.parse(rawId) : null;
-    const userId = searchParams.get("user_id") || localStorageId;
-
     try {
       const resp = await fetch(
         `http://127.0.0.1:8000/api/repos/select?user_id=${userId}`,

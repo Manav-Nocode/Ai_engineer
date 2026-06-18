@@ -165,6 +165,7 @@ async def select_repository(user_id:int, repo: dict = Body(...)):
     )
     if existing_repo:
         Repo_Coll.update_one(
+            {"github_user_id": user_id},
             {"$set": {
                 "last_opened": datetime.utcnow()
             }}
@@ -234,7 +235,6 @@ async def get_repo_contents(user_id: int,repo:str, path: str = ""):
         raise HTTPException(status_code=response.status_code, detail="Failed to fetch contents")
     
     contents = response.json()
-    # print(contents)
     # Single file vs directory
     if isinstance(contents, dict):  # Single file
         return {

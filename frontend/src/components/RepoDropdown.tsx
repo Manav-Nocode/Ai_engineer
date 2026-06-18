@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
-import { useSearchParams } from "react-router-dom";
+import { useApp } from "../../contexts/repoContext";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   fun: () => Promise<void>;
@@ -10,21 +11,17 @@ interface workingReposType {
   repo_full_name: string;
 }
 export function RepoDropdown({ fun }: Props) {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [workingRepos, setWorkingRepos] = useState<workingReposType[]>([]);
   const [popup, setPopup] = useState(false);
-  let rawId: string | null;
+  const { userId, setSelectedRepo } = useApp();
+  const navigate = useNavigate();
   const [choosenRepo, setChoosenRepo] = useState("");
   async function handleClick() {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
   useEffect(() => {
     async function fetchCurrentRepoDetails() {
-      rawId = localStorage.getItem("userId");
-      const localStorageId = rawId ? JSON.parse(rawId) : null;
-      const user_id = searchParams.get("user_id") || localStorageId;
-
-      if (!user_id) {
+      if (!userId) {
         // no user id available anywhere — redirect to login/connect flow, etc.
         console.error("No user_id found in searchParams or localStorage");
         return;
@@ -32,13 +29,12 @@ export function RepoDropdown({ fun }: Props) {
       // show all the repos in dropdown as persisted data
       try {
         const renderRepoDataRequest = await fetch(
-          `http://127.0.0.1:8000/api/userRepos?user_id=${user_id}`,
+          `http://127.0.0.1:8000/api/userRepos?user_id=${userId}`,
         );
         const repoResponse = await renderRepoDataRequest.json();
         if (repoResponse && Array.isArray(repoResponse.repos)) {
           setWorkingRepos(repoResponse.repos);
           // console.log(repoResponse);
-          // console.log(workingRepos);
         }
       } catch (err) {
         console.log(err);
@@ -47,15 +43,11 @@ export function RepoDropdown({ fun }: Props) {
     fetchCurrentRepoDetails();
   }, []);
   useEffect(() => {
-    console.log(workingRepos);
+    // console.log(workingRepos);
   }, [workingRepos]);
 
   async function fast(name: string) {
-    rawId = localStorage.getItem("userId");
-    const localStorageId = rawId ? JSON.parse(rawId) : null;
-    const user_id = searchParams.get("user_id") || localStorageId;
-
-    if (!user_id) {
+    if (!userId) {
       // no user id available anywhere — redirect to login/connect flow, etc.
       console.error("No user_id found in searchParams or localStorage");
       return;
@@ -64,10 +56,12 @@ export function RepoDropdown({ fun }: Props) {
     console.log(choosenRepo);
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/repos/contents?user_id=${user_id}&repo=${name}`,
+        `http://127.0.0.1:8000/api/repos/contents?user_id=${userId}&repo=${name}`,
       );
       const data = await response.json();
+      setSelectedRepo(data.items);
       console.log(data);
+      navigate("/editor");
     } catch (err) {
       console.log(err);
     }
@@ -93,24 +87,6 @@ export function RepoDropdown({ fun }: Props) {
           </span>
           <Icon name="arrow" className="h-4 w-4 text-zinc-400" />
         </button>
-
-        {/* <li
-          onClick={fetchCurrentRepoDetails}
-          className="border-2 text-white border-green-400 m-2 pl-4"
-        > */}
-        {/* {workingRepos.length > 0 ? (
-          <li
-            // onClick={fetchCurrentRepoDetails}
-            className="border-2 text-white border-green-400 m-2 pl-4"
-          >
-            {workingRepos.map((items, idx) => (
-              <div key={idx}>{items.repo_name}</div>
-            ))}
-          </li>
-        ) : (
-          "Nothing to show"
-        )} */}
-        {/* </li> */}
 
         {workingRepos.length > 0 ? (
           <ul className="mt-2 max-h-[220px] space-y-1 overflow-y-auto">
