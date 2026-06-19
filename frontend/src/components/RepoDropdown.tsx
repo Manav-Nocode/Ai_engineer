@@ -16,9 +16,12 @@ export function RepoDropdown({ fun }: Props) {
   const { userId, setSelectedRepo } = useApp();
   const navigate = useNavigate();
   const [choosenRepo, setChoosenRepo] = useState("");
+  const { setUserName } = useApp();
+
   async function handleClick() {
     window.location.href = "http://127.0.0.1:8000/api/auth/github";
   }
+
   useEffect(() => {
     async function fetchCurrentRepoDetails() {
       if (!userId) {
@@ -53,6 +56,7 @@ export function RepoDropdown({ fun }: Props) {
       return;
     }
     setChoosenRepo(name);
+    setUserName(name);
     console.log(choosenRepo);
     try {
       const response = await fetch(
@@ -60,7 +64,7 @@ export function RepoDropdown({ fun }: Props) {
       );
       const data = await response.json();
       setSelectedRepo(data.items);
-      console.log(data);
+      // console.log(data);
       navigate("/editor");
     } catch (err) {
       console.log(err);

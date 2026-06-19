@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { TiFolderOpen } from "react-icons/ti";
 import Fileicon from "./Fileicon";
+import type { datatype } from "../../../../pages/CodeEditor";
 
 export type linksType = {
   self: string;
@@ -16,6 +17,8 @@ export type repoDetailedTypes = {
   html_url: string;
   git_url: string;
   download_url: string | null;
+  content: string;
+  encoding: string;
   type: string;
   _links: linksType;
 };
@@ -24,8 +27,14 @@ interface Props {
   name: string;
   onpress: string;
   path: string;
+  setCurrentlyWorkingFiles: React.Dispatch<React.SetStateAction<datatype[]>>;
 }
-const FolderIcon = ({ name, onpress, path }: Props) => {
+const FolderIcon = ({
+  name,
+  onpress,
+  path,
+  setCurrentlyWorkingFiles,
+}: Props) => {
   const [subdata, setsubdata] = useState<repoDetailedTypes[]>([]);
 
   async function handlePress(url: string) {
@@ -35,10 +44,10 @@ const FolderIcon = ({ name, onpress, path }: Props) => {
     console.log(data);
   }
   return (
-    <main className="flex items-baseline flex-col">
+    <main className="flex items-baseline w-full flex-col">
       <div
         id="contains: img+file_name"
-        className="flex justify-center items-center mb-1.5 hover:cursor-pointer hover:bg-amber-200"
+        className="flex w-full border-2  mb-1.5 hover:cursor-pointer hover:bg-amber-200"
         onClick={() => handlePress(onpress)}
       >
         <div className="pr-2">
@@ -46,21 +55,26 @@ const FolderIcon = ({ name, onpress, path }: Props) => {
         </div>
         <p>{name}</p>
       </div>
-      <div className="flex flex-col pl-2 items-baseline  border-l-1 ">
+      <div className="flex flex-col pl-2 items-baseline  border-l-1 w-full">
         {subdata?.map((item, idx) => {
           if (item.type == "file") {
             return (
-              <div className="" key={idx}>
-                <Fileicon name={item.name} path={item.path} />
+              <div className="w-full" key={idx}>
+                <Fileicon
+                  name={item.name}
+                  path={item.path}
+                  setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
+                />
               </div>
             );
           } else {
             return (
-              <div key={idx}>
+              <div className="w-full" key={idx}>
                 <FolderIcon
                   name={item.name}
                   path={item.path}
                   onpress={item.url}
+                  setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
                 />
               </div>
             );

@@ -1,10 +1,15 @@
+import { useState } from "react";
+import type { datatype } from "../../../pages/CodeEditor";
 import { editorLines } from "./editorData";
 
-type CodePaneProps = {
-  selectedRepoName: string;
-};
+interface Props {
+  fileText: string;
+}
 
-export function CodePane({ selectedRepoName }: CodePaneProps) {
+export function CodePane() {
+  const [filewrite, setfilewrite] = useState("");
+  // async function bring() {
+
   return (
     <div className="min-h-0 flex-1 overflow-auto bg-[#171817] font-mono text-sm text-[#f3eadc]">
       <div className="min-w-[760px] px-0 py-5">
@@ -17,7 +22,7 @@ export function CodePane({ selectedRepoName }: CodePaneProps) {
               {index + 1}
             </span>
             <code className="whitespace-pre text-[#f4eee2]">
-              {line.replace("selected-repository", selectedRepoName) || " "}
+              {line.replace("selected-repository", "hi") || " "}
             </code>
           </div>
         ))}
