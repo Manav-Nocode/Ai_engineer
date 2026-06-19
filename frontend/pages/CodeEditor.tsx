@@ -12,15 +12,22 @@ import { TerminalPanel } from "../src/components/editor/TerminalPanel";
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
-
+export interface datatype {
+  name: string;
+  content: string;
+  encoding: string;
+}
 export default function CodeEditor() {
   const { selectedRepo } = useApp();
   const [leftWidth, setLeftWidth] = useState(280);
   const [rightWidth, setRightWidth] = useState(360);
   const [terminalHeight, setTerminalHeight] = useState(210);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-
+  const [currentlyWorkingFiles, setCurrentlyWorkingFiles] = useState<
+    datatype[]
+  >([]);
   const selectedRepoName = selectedRepo[0]?.path || "selected-repository";
+  console.log(currentlyWorkingFiles);
 
   function startHorizontalResize(
     event: PointerEvent<HTMLDivElement>,
@@ -94,6 +101,7 @@ export default function CodeEditor() {
             }
             width={leftWidth}
             selectedRepo={selectedRepo}
+            setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
           />
 
           <ResizeHandle
@@ -103,9 +111,9 @@ export default function CodeEditor() {
             onPointerDown={(event) => startHorizontalResize(event, "left")}
           />
 
-          <section className="flex min-w-0 flex-1 flex-col bg-[#eee6d7]">
+          <section className="flex min-w-0 flex-1 flex-col bg-[#eee6d7] border-8 border-pink-600">
             <EditorTabs />
-            <CodePane selectedRepoName={selectedRepoName} />
+            <CodePane />
             <TerminalPanel
               height={terminalHeight}
               onResizeStart={startTerminalResize}

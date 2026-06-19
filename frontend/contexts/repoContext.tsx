@@ -15,6 +15,8 @@ export type repoDetailedTypes = {
   url: string;
   html_url: string;
   git_url: string;
+  content: string;
+  encoding: string;
   download_url: string | null;
   type: string;
   _links: linksType;
@@ -55,7 +57,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
   if (selectedRepo != null) {
-    console.log(selectedRepo);
+    // console.log(selectedRepo);
+    // console.log(userName);
   }
   return (
     <AppContext.Provider

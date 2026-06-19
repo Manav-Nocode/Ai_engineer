@@ -54,6 +54,7 @@ async def github_callback(code: str, state:str = None):
 
         )
         token_data = response.json()
+        print(token_data)
         if "error" in token_data:
             raise HTTPException(status_code=400,
                                 detail=token_data["error_description"])
