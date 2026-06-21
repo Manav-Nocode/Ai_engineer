@@ -24,7 +24,6 @@ export async function getFileContent(path: string) {
       },
     );
     const data: GitHubFileType = await response.json();
-    console.log(data);
 
     return data;
   } catch (err) {

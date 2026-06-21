@@ -1,31 +1,43 @@
+// EditorPanel.tsx
 import { useState } from "react";
-import type { datatype } from "../../../pages/CodeEditor";
-import { editorLines } from "./editorData";
+import CodeMirrorEditor from "./../../../editorComp/CodeMirrorEditor";
+import { useFileContext } from "../../../contexts/workingFIles";
 
 interface Props {
-  fileText: string;
+  content: string;
 }
+export function CodePane({ content }: Props) {
+  const { displayText, filename } = useFileContext();
+  if (displayText === null) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          background: "#1e1e1e",
+          color: "#6d6255",
+        }}
+      >
+        <p>Select a file from the sidebar to start editing</p>
+      </div>
+    );
+  }
 
-export function CodePane() {
-  const [filewrite, setfilewrite] = useState("");
-  // async function bring() {
-
+  console.log(displayText);
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-[#171817] font-mono text-sm text-[#f3eadc]">
-      <div className="min-w-[760px] px-0 py-5">
-        {editorLines.map((line, index) => (
-          <div
-            className="grid grid-cols-[64px_1fr] border-l-2 border-transparent leading-7 hover:border-[#8c35f8] hover:bg-white/[0.04]"
-            key={`${line}-${index}`}
-          >
-            <span className="select-none pr-4 text-right text-[#7d776e]">
-              {index + 1}
-            </span>
-            <code className="whitespace-pre text-[#f4eee2]">
-              {line.replace("selected-repository", "hi") || " "}
-            </code>
-          </div>
-        ))}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        background: "#1e1e1e",
+        overflow: "scroll",
+      }}
+    >
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <CodeMirrorEditor content={displayText} filePath={filename || "src"} />
       </div>
     </div>
   );

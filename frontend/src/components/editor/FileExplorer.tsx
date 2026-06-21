@@ -1,5 +1,5 @@
 import { useApp, type repoDetailedTypes } from "../../../contexts/repoContext";
-import type { datatype } from "../../../pages/CodeEditor";
+
 import { Icon } from "../Icon";
 import Fileicon from "./icons/Fileicon";
 import FolderIcon from "./icons/FolderIcon";
@@ -9,7 +9,6 @@ type FileExplorerProps = {
   onToggleCollapsed: () => void;
   width: number;
   selectedRepo: repoDetailedTypes[];
-  setCurrentlyWorkingFiles: React.Dispatch<React.SetStateAction<datatype[]>>;
 };
 
 export function FileExplorer({
@@ -17,12 +16,11 @@ export function FileExplorer({
   onToggleCollapsed,
   width,
   selectedRepo,
-  setCurrentlyWorkingFiles,
 }: FileExplorerProps) {
   const { userName } = useApp();
   return (
     <aside
-      className="hidden shrink-0 border-r border-[#d5cbbc] bg-[#f5efe3] text-[#151515] lg:block"
+      className="overflow-scroll hidden shrink-0 border-r border-[#d5cbbc] bg-[#f5efe3] text-[#151515] lg:block"
       style={{ width: isCollapsed ? 48 : width }}
     >
       <div className="flex h-11 items-center justify-between border-b border-[#d5cbbc] px-4">
@@ -56,20 +54,13 @@ export function FileExplorer({
       >
         {selectedRepo.map((item, idx) => {
           if (item.type == "file") {
-            return (
-              <Fileicon
-                name={item.name}
-                path={item.path}
-                setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
-              />
-            );
+            return <Fileicon name={item.name} path={item.path} />;
           } else if (item.type == "dir") {
             return (
               <FolderIcon
                 name={item.name}
                 path={item.path}
                 onpress={item.url}
-                setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
               />
             );
           }

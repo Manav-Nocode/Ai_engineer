@@ -37,7 +37,6 @@ export function RepoDropdown({ fun }: Props) {
         const repoResponse = await renderRepoDataRequest.json();
         if (repoResponse && Array.isArray(repoResponse.repos)) {
           setWorkingRepos(repoResponse.repos);
-          // console.log(repoResponse);
         }
       } catch (err) {
         console.log(err);
@@ -64,6 +63,7 @@ export function RepoDropdown({ fun }: Props) {
       );
       const data = await response.json();
       setSelectedRepo(data.items);
+      console.log(data.items);
       // console.log(data);
       navigate("/editor");
     } catch (err) {

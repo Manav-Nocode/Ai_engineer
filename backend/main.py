@@ -95,7 +95,7 @@ async def github_callback(code: str, state:str = None):
                 }}
             )                      
         
-        return RedirectResponse(url=f"http://localhost:5173/d?github_connected=true&user_id={github_user_id}")
+        return RedirectResponse(url=f"http://localhost:5173?github_connected=true&user_id={github_user_id}")
 
 
 @app.get("/api/repos")

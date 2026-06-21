@@ -27,14 +27,8 @@ interface Props {
   name: string;
   onpress: string;
   path: string;
-  setCurrentlyWorkingFiles: React.Dispatch<React.SetStateAction<datatype[]>>;
 }
-const FolderIcon = ({
-  name,
-  onpress,
-  path,
-  setCurrentlyWorkingFiles,
-}: Props) => {
+const FolderIcon = ({ name, onpress, path }: Props) => {
   const [subdata, setsubdata] = useState<repoDetailedTypes[]>([]);
 
   async function handlePress(url: string) {
@@ -60,11 +54,7 @@ const FolderIcon = ({
           if (item.type == "file") {
             return (
               <div className="w-full" key={idx}>
-                <Fileicon
-                  name={item.name}
-                  path={item.path}
-                  setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
-                />
+                <Fileicon name={item.name} path={item.path} />
               </div>
             );
           } else {
@@ -74,7 +64,6 @@ const FolderIcon = ({
                   name={item.name}
                   path={item.path}
                   onpress={item.url}
-                  setCurrentlyWorkingFiles={setCurrentlyWorkingFiles}
                 />
               </div>
             );

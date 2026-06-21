@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import { LuFile } from "react-icons/lu";
 import useFile from "../../../../hooks/fileEdit";
 import type { datatype } from "../../../../pages/CodeEditor";
+import { useFileContext } from "../../../../contexts/workingFIles";
 interface Props {
   name: string;
   path: string;
-  setCurrentlyWorkingFiles: React.Dispatch<React.SetStateAction<datatype[]>>;
 }
 
-const Fileicon = ({ name, path, setCurrentlyWorkingFiles }: Props) => {
+const Fileicon = ({ name, path }: Props) => {
   const [send, setSend] = useState("");
   const { data, refetch } = useFile(path);
+  const { setCurrentlyWorkingFiles, currentlyWorkingFiles } = useFileContext();
   async function handlePress() {
     try {
       const result = await refetch();
@@ -22,7 +23,12 @@ const Fileicon = ({ name, path, setCurrentlyWorkingFiles }: Props) => {
           encoding: result.data.encoding || "base64",
         };
 
-        setCurrentlyWorkingFiles((prev) => [...prev, targetFile]);
+        const alreadyExists = currentlyWorkingFiles.find(
+          (f) => f.name === targetFile.name,
+        );
+        if (!alreadyExists) {
+          setCurrentlyWorkingFiles((prev) => [targetFile, ...prev]);
+        }
       }
     } catch (err) {
       console.log(err);
