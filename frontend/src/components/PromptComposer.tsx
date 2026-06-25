@@ -10,6 +10,12 @@ export function PromptComposer({ fun }: Props) {
   function openDD() {
     setDropdown(!dropdown);
   }
+
+  async function handleClick() {
+    const response = await fetch("http://127.0.0.1:8000/ai_resp");
+    const data = await response.json();
+    console.log(data);
+  }
   return (
     <div className="relative w-full max-w-[850px]">
       <section className="min-h-[190px] rounded-[22px] border border-white/[0.03] bg-[#343434] shadow-[0_18px_80px_rgba(0,0,0,0.18)]">
@@ -64,6 +70,7 @@ export function PromptComposer({ fun }: Props) {
               <Icon name="more" />
             </button>
             <button
+              onClick={handleClick}
               aria-label="Send prompt"
               className="grid h-10 w-10 place-items-center rounded-full bg-[#8C35F8] text-zinc-950 shadow-sm transition hover:bg-white"
               type="button"

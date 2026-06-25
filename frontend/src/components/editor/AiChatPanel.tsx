@@ -26,7 +26,7 @@ export function AiChatPanel({ width }: AiChatPanelProps) {
     });
     const data = await response.json();
     console.log(data);
-    setRender(data.answer);
+    setRender(data);
     console.log(render);
   }
   return (
