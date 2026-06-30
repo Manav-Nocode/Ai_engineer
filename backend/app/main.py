@@ -1,39 +1,53 @@
 import json
 import os
+import signal
+from contextlib import asynccontextmanager
 
+import socketio
 from app.config import settings
 from app.router.fetch_selected_repos import router as get_allUser_repos
+from app.router.fetch_selected_repos import router as gitauth
 from app.router.getRepoContent import router as getRepoContents
 from app.router.getusersRepos import router as list_repositories
 from app.router.redirect_handler import router as github_callback
 from app.router.selectRepo import router as selectRepo
+from app.socket.socket import client_terminals, sio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from google.genai import types
-from intelligence.agent.agent import run_tools
+from intelligence.tools.build_prompt import SYSTEM_PROMPT, build_Prompt
 
-# from intelligence.ai_caller import client
-from intelligence.tools.build_prompt import build_Prompt
-from intelligence.tools.Evaluate_tech_stack import execute as Evaluate_tech_stack
-from intelligence.tools.fetch_Repo_tree import execute as fetch_repo_tree
-from intelligence.tools.read_file_content import execute as read_file_content
-from intelligence.tools.registery import TOOLS, TOOLS_SCHEMA
+# from intelligence.tools.Evaluate_tech_stack import execute as Evaluate_tech_stack
+# from intelligence.tools.fetch_Repo_tree import execute as fetch_repo_tree
+# from intelligence.tools.read_file_content import execute as read_file_content
+from intelligence.tools.registery import get_tool_handler, get_tool_schema
 from openai import OpenAI
 from pydantic import BaseModel
 
-app = FastAPI(title=settings.PROJECT_NAME)
-origins = ["http://localhost:5173", "http://127.0.0.1:8000"]
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    print("shutting down. cleaning terminal processes")
+    for sid, info in list(client_terminals.items()):
+        try:
+            info["task"].cancel()
+            os.close(info("fd"))
+            os.kill(info["pid"], signal.SIGKILL)
+        except Exception:
+            pass
+    print("cleanup finished")
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-print(settings.API_KEY)
 
 
 class AiService(BaseModel):
@@ -47,11 +61,9 @@ async def func(data: AiService):
         api_key=settings.API_KEY,
     )
 
+    state = {}
     messages = [
-        {
-            "role": "system",
-            "content": "You are a helpful programming assistant. When asked to look at a repository, first call fetch_repo_tree to look at the workspace structure, and then immediately call read_file_content to inspect the contents of any relevant code files.",
-        },
+        {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": data.question},
     ]
 
@@ -61,7 +73,7 @@ async def func(data: AiService):
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            tools=TOOLS_SCHEMA,
+            tools=get_tool_schema(),
             tool_choice="auto",
         )
 
@@ -71,7 +83,7 @@ async def func(data: AiService):
             return {"final_response": output_message.content}
 
         messages.append(output_message)
-
+        print(messages)
         for tool_call in tool_calls:
             function_name = tool_call.function.name
 
@@ -85,13 +97,13 @@ async def func(data: AiService):
             if function_args is None:
                 function_args = {}
 
-            function_to_call = TOOLS.get(function_name)
+            handler = get_tool_handler(function_name)
 
-            if function_to_call:
+            if handler:
                 print(
                     f"🔄 Agent Loop Iteration {iteration + 1}: Running tool '{function_name}'"
                 )
-                tool_result = await function_to_call(**function_args)
+                tool_result = await handler(state=state, **function_args)
 
                 messages.append(
                     {
@@ -106,7 +118,8 @@ async def func(data: AiService):
                     status_code=400,
                     detail=f"Function '{function_name}' requested by LLM not found",
                 )
-
+        print(response)
+        # print(messages)
     return {"error": "Agent loop exceeded maximum allowable cycles."}
 
 
@@ -123,30 +136,17 @@ async def gitauth():
     return RedirectResponse(url=githubUrl)
 
 
-@app.get("/test")
-def fun():
-    return {"msg": "server up"}
-
-
-# async def ai_service(data: AiService):
-#     prompt = build_Prompt(data)
-#     response = client.models.generate_content(
-#         model="gemini-3.5-flash",
-#         contents=f"""
-#         {prompt}
-
-#         """,
-#     )
-#     print(response)
-#     return response
-
-# Point to your local Ollama instance
-
-
+# app.include_router(gitauth, prefix=("/api"))
 app.include_router(github_callback, prefix="/api/auth")
 app.include_router(get_allUser_repos, prefix="/api")
 app.include_router(list_repositories, prefix="/api")
 app.include_router(selectRepo, prefix="/api")
-
-
 app.include_router(getRepoContents, prefix=("/api"))
+
+
+@app.get("/test-api")
+def test_api():
+    return {"status": "HTTP routes are working completely fine!"}
+
+
+socket_app = socketio.ASGIApp(sio, other_asgi_app=app, socketio_path="socket.io")

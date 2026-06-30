@@ -2,6 +2,7 @@ import base64
 from typing import List, TypedDict, Union
 
 import httpx
+from intelligence.register import register_tool
 
 
 class TreeItem(TypedDict):
@@ -14,20 +15,23 @@ class InputType(TypedDict):
     data: List[TreeItem]
 
 
-async def execute(path: str = None, repo: Union[dict, list] = None, **kwargs):
+async def handler(path: str = None, state: dict = None, **kwargs):
     # 1. Catch missing mandatory arguments gracefully to prevent system crash
-    print("i was called")
+    print("read file content was called")
+    print(state)
     if not path:
         return {
             "error": "The 'path' argument is required but was not provided by the model."
         }
 
     # 2. Check kwargs for hallucinated repo variable names
-    if repo is None:
-        for alternative_key in ["repo_data", "repository", "tree", "repo_tree", "data"]:
-            if alternative_key in kwargs:
-                repo = kwargs[alternative_key]
-                break
+    repo = state.get("repo_tree") if state else None
+
+    # if repo is None:
+    #     for alternative_key in ["repo_data", "repository", "tree", "repo_tree", "data"]:
+    #         if alternative_key in kwargs:
+    #             repo = kwargs[alternative_key]
+    #             break
 
     if repo is None:
         return {
@@ -72,4 +76,25 @@ async def execute(path: str = None, repo: Union[dict, list] = None, **kwargs):
         raw_base64 = contents["content"].replace("\n", "")
         decoded_text = base64.b64decode(raw_base64).decode("utf-8")
 
-        return {"code": decoded_text}
+        if state is not None:
+            if "opened_files" not in state:
+                state["opened_files"] = {}
+            state["opened_files"][path] = decoded_text
+        return {"code": decoded_text, "path": path}
+
+
+register_tool(
+    name="read_file_content",
+    handler=handler,
+    schema={
+        "name": "read_file_content",
+        "description": "Reads file content",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "File path to read"},
+            },
+            "required": ["path"],
+        },
+    },
+)
